@@ -1,0 +1,12 @@
+{
+  "id": "rewhitelist",
+  "name": "ReWhitelist",
+  "version": "@version@",
+  "description": "Simple Velocity plugin that provides whitelisting with nickname, uuid or regex",
+  "authors": [
+    "ReModded Team"
+  ],
+  "dependencies": [],
+  "url": "https://github.com/ReModded/ReWhitelist",
+  "main": "dev.remodded.rewhitelist.ReWhitelist"
+}
