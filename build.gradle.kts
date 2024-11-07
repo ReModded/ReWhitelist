@@ -4,12 +4,15 @@ plugins {
     id("com.github.johnrengelman.shadow") version "5.2.0"
 }
 
-group = "dev.remodded.whitelist"
+group = "dev.remodded"
 version = "1.0.0"
 
 repositories {
-    maven("https://repo.remodded.dev/repository/paper/")
-    maven("https://repo.remodded.dev/repository/maven-central/")
+    maven("https://repo.remodded.dev/repository/PaperMC/")
+    maven("https://repo.remodded.dev/repository/maven-public/")
+    maven("https://s01.oss.sonatype.org/content/repositories/snapshots/") {
+        name = "sonatype-oss-snapshots"
+    }
 }
 
 dependencies {
