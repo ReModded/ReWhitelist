@@ -1,0 +1,3 @@
+[messages]
+# Message sent when a player was denied access
+deny = "&cYou're not invited to the party..."

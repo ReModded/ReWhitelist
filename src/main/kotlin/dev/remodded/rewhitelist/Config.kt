@@ -1,9 +1,9 @@
 package dev.remodded.rewhitelist
 
 import com.moandjiezana.toml.Toml
-import com.moandjiezana.toml.TomlWriter
 import com.velocitypowered.api.event.ResultedEvent
 import net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer
+import java.io.FileOutputStream
 import java.nio.file.FileAlreadyExistsException
 import java.nio.file.Path
 import kotlin.io.path.createDirectory
@@ -22,13 +22,13 @@ class Config(config: Toml) {
                 try {
                     configDirectory.createDirectory()
                 } catch (_: FileAlreadyExistsException) {}
-                
+
                 if (configFile.createNewFile())
-                   TomlWriter().write(mapOf(
-                       "messages" to mapOf(
-                           "deny" to "&cYou're not invited to the party..."
-                       )
-                   ), configFile)
+                    Config::class.java.getResourceAsStream("/config.toml").use { input ->
+                        FileOutputStream(configFile).use { output ->
+                            input!!.copyTo(output)
+                        }
+                    }
 
                 val config = Toml().read(configFile)
 
