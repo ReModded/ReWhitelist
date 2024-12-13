@@ -1,0 +1,12 @@
+[plugins]
+kotlin-jvm = { id = "org.jetbrains.kotlin.jvm", version.ref = "kotlin" }
+shadow = { id = "com.gradleup.shadow", version.ref = "shadow" }
+
+[versions]
+kotlin = "2.0.21"
+shadow = "8.3.5"
+velocity = "3.4.0-SNAPSHOT"
+
+[libraries]
+velocity-api = { module = "com.velocitypowered:velocity-api", version.ref = "velocity" }
+kyori-pagginate = { module = "net.kyori:adventure-text-feature-pagination", version = "4.0.0-SNAPSHOT" }
