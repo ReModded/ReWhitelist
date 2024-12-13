@@ -145,6 +145,7 @@ object WhitelistCommand {
         whitelist.entries.forEach { entry ->
             if (entryValue == entry.toString()) {
                 whitelist.entries.remove(entry)
+                whitelist.save()
 
                 src.sendMessage(Component.text("Entry ($entryValue) has been removed from whitelist (${whitelist.name})", NamedTextColor.GREEN))
                 return 0
