@@ -1,5 +1,9 @@
 # ReWhitelist
 A simple, but still very powerful plugin that allows you to restrict access to the server. Allows you to add many different lists, with the option to turn them on and off as needed. For example, you can have a list with all administrators who have access to the server at all times, and a list with testers who have access only for testing. You no longer need to add or remove users from one whitelist, you just need to enable or disable the whitelist with testers on it.
+
+## Download
+You can download the latest version of the plugin from the [Hangar](https://hangar.papermc.io/ReModded/ReWhitelist).
+
 ## Commands & permissions
 Main command is `/whitelist` which display all arguments or you can find them below.
 
@@ -26,8 +30,4 @@ Main command is `/whitelist` which display all arguments or you can find them be
 
 ## Configuration file
 Example config file:
-config.toml
-```toml
-[messages]
-deny = "&cYou're not invited to the party..."
-```
+[config.toml](/src/main/resources/config.toml)
