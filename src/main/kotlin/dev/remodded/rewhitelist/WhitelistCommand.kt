@@ -19,7 +19,9 @@ import net.kyori.adventure.text.format.NamedTextColor
 
 object WhitelistCommand {
     fun register() {
-        ReWhitelist.server.commandManager.register(BrigadierCommand(createCommand()))
+        val cm = ReWhitelist.server.commandManager
+        val command = BrigadierCommand(createCommand())
+        cm.register(cm.metaBuilder(command).plugin(ReWhitelist.plugin).build(), command)
     }
 
     private fun createCommand(): LiteralArgumentBuilder<CommandSource> {
