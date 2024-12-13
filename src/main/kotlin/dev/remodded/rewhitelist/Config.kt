@@ -14,6 +14,8 @@ class Config(config: Toml) {
         LegacyComponentSerializer.legacyAmpersand().deserialize(config.getString("messages.deny", "&cYou're not invited to the party..."))
     )
 
+    val useNicksUUIDs: Boolean = config.getBoolean("useNicksUUIDs", true) && ReWhitelist.server.configuration.isOnlineMode
+
 
     companion object {
         fun load(configDirectory: Path): Config {

@@ -1,3 +1,6 @@
+# Matches nick entris using UUIDs if server is in online-mode
+useNicksUUIDs = false
+
 [messages]
 # Message sent when a player was denied access
 deny = "&cYou're not invited to the party..."
