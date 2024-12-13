@@ -2,6 +2,7 @@ plugins {
     alias(libs.plugins.kotlin.jvm)
     alias(libs.plugins.shadow)
     id("org.jetbrains.kotlin.plugin.serialization") version (libs.versions.kotlin)
+    alias(libs.plugins.runTask)
 }
 
 group = "dev.remodded"
@@ -24,6 +25,11 @@ dependencies {
 }
 
 tasks {
+
+    runVelocity {
+        velocityVersion(libs.versions.velocity.get())
+    }
+
     shadowJar {
         archiveBaseName.set("ReWhitelist")
         archiveClassifier.set("")

@@ -1,6 +1,7 @@
 [plugins]
 kotlin-jvm = { id = "org.jetbrains.kotlin.jvm", version.ref = "kotlin" }
 shadow = { id = "com.gradleup.shadow", version.ref = "shadow" }
+runTask = { id = "xyz.jpenilla.run-velocity", version = "2.3.1"}
 
 [versions]
 kotlin = "2.0.21"
