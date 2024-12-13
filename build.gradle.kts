@@ -1,3 +1,5 @@
+import org.apache.tools.ant.filters.ReplaceTokens
+
 plugins {
     alias(libs.plugins.kotlin.jvm)
     alias(libs.plugins.shadow)
@@ -41,5 +43,11 @@ tasks {
 
     compileJava {
         options.encoding = Charsets.UTF_8.name()
+    }
+
+    processResources {
+        filter<ReplaceTokens>(
+            "tokens" to mapOf("version" to project.version)
+        )
     }
 }
