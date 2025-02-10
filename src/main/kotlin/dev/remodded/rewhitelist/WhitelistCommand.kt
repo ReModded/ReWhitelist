@@ -4,13 +4,13 @@ import com.mojang.brigadier.arguments.IntegerArgumentType
 import com.mojang.brigadier.arguments.StringArgumentType
 import com.mojang.brigadier.builder.ArgumentBuilder
 import com.mojang.brigadier.builder.LiteralArgumentBuilder
-import com.mojang.brigadier.builder.LiteralArgumentBuilder.literal
-import com.mojang.brigadier.builder.RequiredArgumentBuilder.argument
 import com.mojang.brigadier.context.CommandContext
 import com.velocitypowered.api.command.BrigadierCommand
 import com.velocitypowered.api.command.CommandSource
 import dev.remodded.rewhitelist.entries.Entry
 import dev.remodded.rewhitelist.utils.CommandUtils
+import dev.remodded.rewhitelist.utils.CommandUtils.argument
+import dev.remodded.rewhitelist.utils.CommandUtils.literal
 import net.kyori.adventure.text.Component
 import net.kyori.adventure.text.event.ClickEvent
 import net.kyori.adventure.text.event.HoverEvent
@@ -25,10 +25,10 @@ object WhitelistCommand {
     }
 
     private fun createCommand(): LiteralArgumentBuilder<CommandSource> {
-        return literal<CommandSource>("whitelist")
+        return literal("whitelist")
             .requires(CommandUtils.permissionRequirement("rewhitelist.command.whitelist"))
             .then(
-                literal<CommandSource>("reload")
+                literal("reload")
                     .requires(CommandUtils.permissionRequirement("rewhitelist.command.whitelist.reload"))
                     .executes { ctx ->
                         ReWhitelist.plugin.reload()
@@ -37,10 +37,10 @@ object WhitelistCommand {
                     }
             )
             .then(
-                literal<CommandSource>("create")
+                literal("create")
                     .requires(CommandUtils.permissionRequirement("rewhitelist.command.whitelist.create"))
                     .then(
-                        argument<CommandSource, String>("whitelist", StringArgumentType.string())
+                        argument("whitelist", StringArgumentType.string())
                             .executes { ctx ->
                                 createNewWhitelist(ctx.source, StringArgumentType.getString(ctx, "whitelist"))
                             }
@@ -51,7 +51,7 @@ object WhitelistCommand {
                     }
             )
             .then(
-                argument<CommandSource, String>("whitelist", StringArgumentType.string())
+                argument("whitelist", StringArgumentType.string())
                     .addWhitelistManagementNodes { ctx -> StringArgumentType.getString(ctx, "whitelist") }
             )
             .addWhitelistManagementNodes { _ -> "default" }
@@ -64,12 +64,12 @@ object WhitelistCommand {
 
     private fun <T: ArgumentBuilder<CommandSource, T>> T.addWhitelistManagementNodes(whitelistNameResolver: (CommandContext<CommandSource>)->String): T {
         return then(
-            literal<CommandSource>("add")
+            literal("add")
                 .requires(CommandUtils.permissionRequirement("rewhitelist.command.whitelist.add"))
                 .apply {
                     for (entryFactory in ReWhitelist.entryRegistry.getAll().values)
                         then(
-                            literal<CommandSource>(entryFactory.type)
+                            literal(entryFactory.type)
                                 .then(entryFactory.getCommandNode { ctx, entry ->
                                     addWhitelistEntry(ctx.source, whitelistNameResolver(ctx), entry)
                                 })
@@ -81,34 +81,34 @@ object WhitelistCommand {
                 }
         )
         .then(
-            literal<CommandSource>("remove")
+            literal("remove")
                 .requires(CommandUtils.permissionRequirement("rewhitelist.command.whitelist.remove"))
                 .then(
-                    argument<CommandSource?, String?>("entry", StringArgumentType.string())
+                    argument("entry", StringArgumentType.string())
                         .executes { ctx ->
                             removeWhitelistEntry(ctx.source, whitelistNameResolver(ctx), StringArgumentType.getString(ctx, "entry"))
                         }
                 )
         )
         .then(
-            literal<CommandSource?>("on")
+            literal("on")
                 .requires(CommandUtils.permissionRequirement("rewhitelist.command.whitelist.on"))
                 .executes { ctx ->
                     switchWhitelist(ctx.source, whitelistNameResolver(ctx), true)
                 }
         )
         .then(
-            literal<CommandSource?>("off")
+            literal("off")
                 .requires(CommandUtils.permissionRequirement("rewhitelist.command.whitelist.off"))
                 .executes { ctx ->
                     switchWhitelist(ctx.source, whitelistNameResolver(ctx), false)
                 }
         )
         .then(
-            literal<CommandSource>("list")
+            literal("list")
                 .requires(CommandUtils.permissionRequirement("rewhitelist.command.whitelist.list"))
                 .then(
-                    argument<CommandSource, Int>("page", IntegerArgumentType.integer(1))
+                    argument("page", IntegerArgumentType.integer(1))
                         .executes { ctx ->
                             sendWhitelist(ctx.source, whitelistNameResolver(ctx), IntegerArgumentType.getInteger(ctx, "page"))
                         }
