@@ -4,6 +4,8 @@ import com.velocitypowered.api.event.Subscribe
 import com.velocitypowered.api.event.connection.LoginEvent
 import com.velocitypowered.api.event.player.ServerPreConnectEvent
 import com.velocitypowered.api.proxy.Player
+import com.velocitypowered.api.proxy.server.RegisteredServer
+import kotlin.jvm.optionals.getOrNull
 
 
 object PlayerListener {
@@ -15,8 +17,12 @@ object PlayerListener {
         ev.result = ReWhitelist.config.denied
     }
 
-    @Subscribe
+    @Subscribe(priority = (-1).toShort())
     fun onPlayerChangeServer(ev: ServerPreConnectEvent) {
+        val server = ev.result.server.getOrNull()
+        if (server == null) // Some other plugin already prevented the connection
+            return
+
         if (isPlayerAllowed(ev.player))
             return
 
