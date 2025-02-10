@@ -12,6 +12,8 @@ import dev.remodded.rewhitelist.utils.CommandUtils
 import dev.remodded.rewhitelist.utils.CommandUtils.argument
 import dev.remodded.rewhitelist.utils.CommandUtils.literal
 import net.kyori.adventure.text.Component
+import net.kyori.adventure.text.event.ClickEvent
+import net.kyori.adventure.text.event.HoverEvent
 import net.kyori.adventure.text.format.NamedTextColor
 import java.util.concurrent.CompletableFuture
 import kotlin.jvm.optionals.getOrNull
@@ -90,8 +92,24 @@ object WhitelistSettingsSubcommand {
     }
 
     private fun listServers(src: CommandSource, whitelist: Whitelist): Int {
-        whitelist.servers.forEach { src.sendMessage(Component.text(" - $it", NamedTextColor.GREEN)) }
-        src.sendMessage(Component.text("Whitelist (${whitelist.name}) servers:"))
+        src.sendMessage(Component.text()
+            .append(Component.text("Whitelist "))
+            .append(Component.text(whitelist.name, NamedTextColor.YELLOW)
+                .clickEvent(ClickEvent.runCommand("/whitelist ${whitelist.name} settings servers list"))
+                .hoverEvent(HoverEvent.showText(Component.text("Refresh", NamedTextColor.GREEN)))
+            )
+            .append(Component.text(" servers:"))
+            .build()
+        )
+        whitelist.servers.forEach { src.sendMessage(Component.text()
+            .append(Component.text(" - ", NamedTextColor.GRAY))
+            .append(Component.text("$it    "))
+            .append(Component.text("REMOVE", NamedTextColor.RED)
+                .clickEvent(ClickEvent.runCommand("/whitelist ${whitelist.name} settings servers remove $it"))
+                .hoverEvent(HoverEvent.showText(Component.text("Remove server", NamedTextColor.YELLOW)))
+            )
+            .build()
+        )}
         return 0
     }
 

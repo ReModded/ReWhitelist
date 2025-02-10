@@ -5,6 +5,7 @@ import com.mojang.brigadier.builder.ArgumentBuilder
 import com.mojang.brigadier.context.CommandContext
 import com.velocitypowered.api.command.CommandSource
 import com.velocitypowered.api.proxy.Player
+import net.kyori.adventure.text.Component
 
 abstract class Entry(val factory: Factory<*>) {
     abstract fun match(player: Player): Boolean
@@ -17,6 +18,12 @@ abstract class Entry(val factory: Factory<*>) {
         abstract fun fromToml(toml: Toml): T
 
         abstract fun getCommandNode(entryConsumer: (CommandContext<CommandSource>, T) -> Unit): ArgumentBuilder<CommandSource, *>
+
+        open fun getHelp(): List<Component> {
+            return listOf(
+                Component.text("<$type>")
+            )
+        }
     }
 }
 

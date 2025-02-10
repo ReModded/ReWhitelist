@@ -4,7 +4,9 @@ import com.mojang.brigadier.arguments.IntegerArgumentType
 import com.mojang.brigadier.arguments.StringArgumentType
 import com.mojang.brigadier.builder.ArgumentBuilder
 import com.mojang.brigadier.context.CommandContext
+import com.mojang.brigadier.exceptions.DynamicCommandExceptionType
 import com.velocitypowered.api.command.CommandSource
+import com.velocitypowered.api.command.VelocityBrigadierMessage
 import dev.remodded.rewhitelist.ReWhitelist
 import dev.remodded.rewhitelist.Whitelist
 import dev.remodded.rewhitelist.command.WhitelistSettingsSubcommand.whitelistSettingsSubcommand
@@ -13,6 +15,7 @@ import dev.remodded.rewhitelist.utils.CommandUtils
 import dev.remodded.rewhitelist.utils.CommandUtils.argument
 import dev.remodded.rewhitelist.utils.CommandUtils.literal
 import net.kyori.adventure.text.Component
+import net.kyori.adventure.text.TextComponent
 import net.kyori.adventure.text.event.ClickEvent
 import net.kyori.adventure.text.event.HoverEvent
 import net.kyori.adventure.text.feature.pagination.Pagination
@@ -26,70 +29,77 @@ object WhitelistManagementSubcommand {
             literal("add")
                 .requires(CommandUtils.permissionRequirement("rewhitelist.command.whitelist.add"))
                 .apply {
-                    for (entryFactory in ReWhitelist.Companion.entryRegistry.getAll().values)
+                    for (entryFactory in ReWhitelist.entryRegistry.getAll().values)
                         then(
                             literal(entryFactory.type)
                                 .then(entryFactory.getCommandNode { ctx, entry ->
-                                    addWhitelistEntry(ctx.source, whitelistNameResolver(ctx), entry)
+                                    addEntry(ctx.source, whitelistResolver(ctx), entry)
                                 })
+                                .executes { ctx -> addEntryHelp(ctx.source, entryFactory) }
                         )
                 }
-                .executes { ctx ->
-                    ctx.source.sendMessage(Component.text("/whitelist [group] add <type> <value>", NamedTextColor.GRAY))
-                    0
-                }
+                .executes { ctx -> addEntryHelp(ctx.source) }
         )
         .then(
             literal("remove")
                 .requires(CommandUtils.permissionRequirement("rewhitelist.command.whitelist.remove"))
                 .then(
                     argument("entry", StringArgumentType.string())
-                        .executes { ctx ->
-                            removeWhitelistEntry(ctx.source, whitelistNameResolver(ctx), StringArgumentType.getString(ctx, "entry"))
-                        }
+                        .executes { ctx -> removeWhitelistEntry(ctx.source, whitelistResolver(ctx), StringArgumentType.getString(ctx, "entry")) }
                 )
         )
         .then(
             literal("on")
                 .requires(CommandUtils.permissionRequirement("rewhitelist.command.whitelist.on"))
-                .executes { ctx ->
-                    switchWhitelist(ctx.source, whitelistNameResolver(ctx), true)
-                }
+                .executes { ctx -> switchWhitelist(ctx.source, whitelistResolver(ctx), true) }
         )
         .then(
             literal("off")
                 .requires(CommandUtils.permissionRequirement("rewhitelist.command.whitelist.off"))
-                .executes { ctx ->
-                    switchWhitelist(ctx.source, whitelistNameResolver(ctx), false)
-                }
+                .executes { ctx -> switchWhitelist(ctx.source, whitelistResolver(ctx), false) }
         )
         .then(
             literal("list")
                 .requires(CommandUtils.permissionRequirement("rewhitelist.command.whitelist.list"))
                 .then(
                     argument("page", IntegerArgumentType.integer(1))
-                        .executes { ctx ->
-                            sendWhitelist(ctx.source, whitelistNameResolver(ctx), IntegerArgumentType.getInteger(ctx, "page"))
-                        }
+                        .executes { ctx -> sendWhitelist(ctx.source, whitelistResolver(ctx), IntegerArgumentType.getInteger(ctx, "page")) }
                 )
-                .executes { ctx ->
-                    sendWhitelist(ctx.source, whitelistNameResolver(ctx), 1)
-                }
+                .executes { ctx -> sendWhitelist(ctx.source, whitelistResolver(ctx), 1) }
         )
         .then(whitelistSettingsSubcommand(whitelistResolver))
+        .executes { ctx -> sendWhitelist(ctx.source, whitelistResolver(ctx), 1) }
     }
 
-    private fun addWhitelistEntry(src: CommandSource, whitelistName: String, entry: Entry) {
-        val whitelist = getWhitelist(src, whitelistName) ?: return
+    private fun addEntryHelp(src: CommandSource): Int {
+        src.sendMessage(Component.text("ReWhitelist Help:"))
+        for (entry in ReWhitelist.entryRegistry.getAll().values) {
+            val help = entry.getHelp().let {
+                if (it.isEmpty())
+                    Component.empty()
+                else
+                    it[0]
+            }
+            src.sendMessage(Component.text("/whitelist [group] add ${entry.type} ", NamedTextColor.GRAY).append(help))
+        }
+        return 0
+    }
+
+    private fun addEntryHelp(src: CommandSource, entry: Entry.Factory<*>): Int {
+        src.sendMessage(Component.text("ReWhitelist Help:"))
+        for (help in entry.getHelp())
+            src.sendMessage(Component.text("/whitelist [group] add ${entry.type} ", NamedTextColor.GRAY).append(help))
+        return 0
+    }
+
+    private fun addEntry(src: CommandSource, whitelist: Whitelist, entry: Entry) {
         whitelist.entries.add(entry)
         whitelist.save()
 
         src.sendMessage(Component.text("New ${entry.factory.type} entry has been added to whitelist (${whitelist.name})", NamedTextColor.GREEN))
     }
 
-    private fun removeWhitelistEntry(src: CommandSource, whitelistName: String, entryValue: String): Int {
-        val whitelist = getWhitelist(src, whitelistName) ?: return 1
-
+    private fun removeWhitelistEntry(src: CommandSource, whitelist: Whitelist, entryValue: String): Int {
         whitelist.entries.forEach { entry ->
             if (entryValue == entry.toString()) {
                 whitelist.entries.remove(entry)
@@ -104,12 +114,10 @@ object WhitelistManagementSubcommand {
         return 1
     }
 
-    private fun switchWhitelist(src: CommandSource, whitelistName: String, enable: Boolean): Int {
-        val whitelist = getWhitelist(src, whitelistName) ?: return 1
-
+    private fun switchWhitelist(src: CommandSource, whitelist: Whitelist, enable: Boolean): Int {
         if (whitelist.enabled == enable) {
             src.sendMessage(Component.text("Whitelist (${whitelist.name}) was already " + if(enable) "enabled" else "disabled", NamedTextColor.YELLOW))
-            return 0
+            return 1
         }
 
         if (enable) {
@@ -122,28 +130,64 @@ object WhitelistManagementSubcommand {
         return 0
     }
 
-    private fun sendWhitelist(src: CommandSource, whitelistName: String, page: Int): Int {
-        val whitelist = getWhitelist(src, whitelistName) ?: return 1
-        val maxEntryTypeLength = ReWhitelist.Companion.entryRegistry.getAll().keys.maxOfOrNull { t -> t.length } ?: 4
+    private fun sendWhitelist(src: CommandSource, whitelist: Whitelist, page: Int): Int {
+        val maxEntryTypeLength = ReWhitelist.entryRegistry.getAll().keys.maxOfOrNull { t -> t.length } ?: 4
 
-        Pagination.builder().width(50).build(
-            Component.text()
-                .append(Component.text("Whitelist "))
-                .append(Component.text("[", NamedTextColor.GRAY))
-                .apply {
-                    if(whitelist.enabled)
-                        it.append(Component.text("on", NamedTextColor.GREEN))
-                    else
-                        it.append(Component.text("off", NamedTextColor.RED))
+        val header = Component.text()
+            .append(Component.text("Whitelist "))
+            .append(
+                Component.text(whitelist.name, NamedTextColor.YELLOW)
+                    .clickEvent(ClickEvent.runCommand("/whitelist ${whitelist.name}"))
+                    .hoverEvent(HoverEvent.showText(Component.text("Refresh", NamedTextColor.GREEN)))
+            )
+            .append(Component.text(" [", NamedTextColor.GRAY))
+            .apply {
+                if (whitelist.enabled)
+                    it.append(
+                        Component.text("on", NamedTextColor.GREEN)
+                            .clickEvent(ClickEvent.runCommand("/whitelist ${whitelist.name} off"))
+                            .hoverEvent(HoverEvent.showText(Component.text("Disable whitelist",NamedTextColor.RED)))
+                    )
+                else
+                    it.append(
+                        Component.text("off", NamedTextColor.RED)
+                            .clickEvent(ClickEvent.runCommand("/whitelist ${whitelist.name} on"))
+                            .hoverEvent(HoverEvent.showText(Component.text("Enable whitelist", NamedTextColor.GREEN)))
+                    )
+            }
+            .append(Component.text("]", NamedTextColor.GRAY))
+            .build()
+
+        Pagination.builder()
+            .renderer(object : Pagination.Renderer {
+                override fun renderEmpty(): Component {
+                    val header = renderHeader(header, 0, 0)
+                    val line = Component.text("-".repeat((50 - length(header)) / 2), NamedTextColor.DARK_GRAY)
+                    return Component.text()
+                        .append(line)
+                        .append(header)
+                        .append(line)
+                        .append(Component.newline())
+                        .append(Component.text("NO ENTRIES", NamedTextColor.GRAY))
+                        .append(Component.newline())
+                        .append(Component.text("-".repeat(50), NamedTextColor.DARK_GRAY))
+                        .build()
                 }
-                .append(Component.text("]", NamedTextColor.GRAY))
-                .build(),
-            Pagination.Renderer.RowRenderer<Entry> { entry, _ ->
-                if(entry == null)
+
+                fun length(component: Component): Int {
+                    return (if (component is TextComponent) component.content().length else 0) +
+                        component.children().sumOf { length(it) }
+                }
+            })
+            .width(50).build(
+            header,
+            Pagination.Renderer.RowRenderer<Entry> { entry, index ->
+                if (entry == null)
                     return@RowRenderer emptyList()
                 listOf<Component>(
                     Component.text()
-                        .append(Component.text(entry.factory.type.replaceFirstChar { c -> c.titlecase() }.padEnd(maxEntryTypeLength, ' ') , NamedTextColor.GOLD))
+                        .append(Component.text(entry.factory.type.replaceFirstChar { c -> c.titlecase() }
+                            .padEnd(maxEntryTypeLength, ' '), NamedTextColor.GOLD))
                         .append(Component.text(" Entry: ", NamedTextColor.BLUE))
                         .append(Component.text(entry.toString(), NamedTextColor.GREEN))
                         .append(
@@ -151,19 +195,21 @@ object WhitelistManagementSubcommand {
                                 .append(Component.text(" [", NamedTextColor.GRAY))
                                 .append(
                                     Component.text("remove", NamedTextColor.RED)
-                                        .clickEvent(ClickEvent.runCommand("/whitelist remove $entry"))
+                                        .clickEvent(ClickEvent.runCommand("/whitelist ${whitelist.name} remove $entry"))
                                         .hoverEvent(
                                             HoverEvent.showText(
                                                 Component.text()
                                                     .append(Component.text("Remove entry ", NamedTextColor.RED))
                                                     .append(Component.text(entry.toString(), NamedTextColor.YELLOW))
-                                            )))
+                                            )
+                                        )
+                                )
                                 .append(Component.text("]", NamedTextColor.GRAY))
                         )
                         .build()
                 )
             }
-        ) { p -> "/whitelist list $p" }.render(whitelist.entries, page).forEach(src::sendMessage)
+        ) { p -> "/whitelist ${whitelist.name} list $p" }.render(whitelist.entries, page).forEach(src::sendMessage)
 
         return 0
     }

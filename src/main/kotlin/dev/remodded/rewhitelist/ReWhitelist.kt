@@ -77,8 +77,6 @@ class ReWhitelist @Inject constructor(
     }
 
     private fun addWhitelistFromFile(file: File) {
-        println(file.toString())
-
         val whitelist = file.nameWithoutExtension
         whitelists.add(Whitelist.load(whitelist))
     }
