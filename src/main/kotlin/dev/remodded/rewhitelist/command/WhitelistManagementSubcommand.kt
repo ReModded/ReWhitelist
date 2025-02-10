@@ -1,12 +1,12 @@
-package dev.remodded.rewhitelist
+package dev.remodded.rewhitelist.command
 
 import com.mojang.brigadier.arguments.IntegerArgumentType
 import com.mojang.brigadier.arguments.StringArgumentType
 import com.mojang.brigadier.builder.ArgumentBuilder
-import com.mojang.brigadier.builder.LiteralArgumentBuilder
 import com.mojang.brigadier.context.CommandContext
-import com.velocitypowered.api.command.BrigadierCommand
 import com.velocitypowered.api.command.CommandSource
+import dev.remodded.rewhitelist.ReWhitelist
+import dev.remodded.rewhitelist.Whitelist
 import dev.remodded.rewhitelist.entries.Entry
 import dev.remodded.rewhitelist.utils.CommandUtils
 import dev.remodded.rewhitelist.utils.CommandUtils.argument
@@ -17,57 +17,13 @@ import net.kyori.adventure.text.event.HoverEvent
 import net.kyori.adventure.text.feature.pagination.Pagination
 import net.kyori.adventure.text.format.NamedTextColor
 
-object WhitelistCommand {
-    fun register() {
-        val cm = ReWhitelist.server.commandManager
-        val command = BrigadierCommand(createCommand())
-        cm.register(cm.metaBuilder(command).plugin(ReWhitelist.plugin).build(), command)
-    }
-
-    private fun createCommand(): LiteralArgumentBuilder<CommandSource> {
-        return literal("whitelist")
-            .requires(CommandUtils.permissionRequirement("rewhitelist.command.whitelist"))
-            .then(
-                literal("reload")
-                    .requires(CommandUtils.permissionRequirement("rewhitelist.command.whitelist.reload"))
-                    .executes { ctx ->
-                        ReWhitelist.plugin.reload()
-                        ctx.source.sendMessage(Component.text("Whitelist has been reloaded", NamedTextColor.YELLOW))
-                        0
-                    }
-            )
-            .then(
-                literal("create")
-                    .requires(CommandUtils.permissionRequirement("rewhitelist.command.whitelist.create"))
-                    .then(
-                        argument("whitelist", StringArgumentType.string())
-                            .executes { ctx ->
-                                createNewWhitelist(ctx.source, StringArgumentType.getString(ctx, "whitelist"))
-                            }
-                    )
-                    .executes { ctx ->
-                        ctx.source.sendMessage(Component.text("/whitelist create <group>", NamedTextColor.GRAY))
-                        0
-                    }
-            )
-            .then(
-                argument("whitelist", StringArgumentType.string())
-                    .addWhitelistManagementNodes { ctx -> StringArgumentType.getString(ctx, "whitelist") }
-            )
-            .addWhitelistManagementNodes { _ -> "default" }
-            .executes { ctx ->
-                ctx.source.sendMessage(Component.text("/whitelist <reload/create/add/remove/list/on/off>", NamedTextColor.GRAY))
-                ctx.source.sendMessage(Component.text("/whitelist [group] <add/remove/list/on/off>", NamedTextColor.GRAY))
-                0
-            }
-    }
-
-    private fun <T: ArgumentBuilder<CommandSource, T>> T.addWhitelistManagementNodes(whitelistNameResolver: (CommandContext<CommandSource>)->String): T {
+object WhitelistManagementSubcommand {
+    fun <T: ArgumentBuilder<CommandSource, T>> T.whitelistManagementSubcommand(whitelistNameResolver: (CommandContext<CommandSource>)->String): T {
         return then(
             literal("add")
                 .requires(CommandUtils.permissionRequirement("rewhitelist.command.whitelist.add"))
                 .apply {
-                    for (entryFactory in ReWhitelist.entryRegistry.getAll().values)
+                    for (entryFactory in ReWhitelist.Companion.entryRegistry.getAll().values)
                         then(
                             literal(entryFactory.type)
                                 .then(entryFactory.getCommandNode { ctx, entry ->
@@ -119,20 +75,6 @@ object WhitelistCommand {
         )
     }
 
-    private fun createNewWhitelist(src: CommandSource, whitelistName: String): Int {
-        var whitelist = ReWhitelist.getWhitelist(whitelistName)
-        if(whitelist != null) {
-            src.sendMessage(Component.text("Whitelist (${whitelist.name}) already exists", NamedTextColor.RED))
-            return 1
-        }
-
-        whitelist = Whitelist.createNew(whitelistName)
-        ReWhitelist.whitelists.add(whitelist)
-
-        src.sendMessage(Component.text("Whitelist (${whitelist.name}) has been created", NamedTextColor.GREEN))
-        return 0
-    }
-
     private fun addWhitelistEntry(src: CommandSource, whitelistName: String, entry: Entry) {
         val whitelist = getWhitelist(src, whitelistName) ?: return
         whitelist.entries.add(entry)
@@ -178,7 +120,7 @@ object WhitelistCommand {
 
     private fun sendWhitelist(src: CommandSource, whitelistName: String, page: Int): Int {
         val whitelist = getWhitelist(src, whitelistName) ?: return 1
-        val maxEntryTypeLength = ReWhitelist.entryRegistry.getAll().keys.maxOfOrNull { t -> t.length } ?: 4
+        val maxEntryTypeLength = ReWhitelist.Companion.entryRegistry.getAll().keys.maxOfOrNull { t -> t.length } ?: 4
 
         Pagination.builder().width(50).build(
             Component.text()
@@ -200,16 +142,19 @@ object WhitelistCommand {
                         .append(Component.text(entry.factory.type.replaceFirstChar { c -> c.titlecase() }.padEnd(maxEntryTypeLength, ' ') , NamedTextColor.GOLD))
                         .append(Component.text(" Entry: ", NamedTextColor.BLUE))
                         .append(Component.text(entry.toString(), NamedTextColor.GREEN))
-                        .append(Component.text()
-                            .append(Component.text(" [", NamedTextColor.GRAY))
-                            .append(Component.text("remove", NamedTextColor.RED)
-                                .clickEvent(ClickEvent.runCommand("/whitelist remove $entry"))
-                                .hoverEvent(
-                                    HoverEvent.showText(Component.text()
-                                    .append(Component.text("Remove entry ", NamedTextColor.RED))
-                                    .append(Component.text(entry.toString(), NamedTextColor.YELLOW))
-                                )))
-                            .append(Component.text("]", NamedTextColor.GRAY))
+                        .append(
+                            Component.text()
+                                .append(Component.text(" [", NamedTextColor.GRAY))
+                                .append(
+                                    Component.text("remove", NamedTextColor.RED)
+                                        .clickEvent(ClickEvent.runCommand("/whitelist remove $entry"))
+                                        .hoverEvent(
+                                            HoverEvent.showText(
+                                                Component.text()
+                                                    .append(Component.text("Remove entry ", NamedTextColor.RED))
+                                                    .append(Component.text(entry.toString(), NamedTextColor.YELLOW))
+                                            )))
+                                .append(Component.text("]", NamedTextColor.GRAY))
                         )
                         .build()
                 )
@@ -220,7 +165,7 @@ object WhitelistCommand {
     }
 
     private fun getWhitelist(src: CommandSource, whitelistName: String): Whitelist? {
-        val whitelist = ReWhitelist.getWhitelist(whitelistName)
+        val whitelist = ReWhitelist.Companion.getWhitelist(whitelistName)
 
         if (whitelist == null)
             src.sendMessage(Component.text("Selected ($whitelistName) whitelist doesn't exists", NamedTextColor.RED))

@@ -7,6 +7,7 @@ import com.velocitypowered.api.event.proxy.ProxyShutdownEvent
 import com.velocitypowered.api.plugin.Plugin
 import com.velocitypowered.api.plugin.annotation.DataDirectory
 import com.velocitypowered.api.proxy.ProxyServer
+import dev.remodded.rewhitelist.command.WhitelistCommand
 import dev.remodded.rewhitelist.entries.*
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
@@ -38,12 +39,12 @@ class ReWhitelist @Inject constructor(
         server.eventManager.register(plugin, PlayerListener)
         WhitelistCommand.register()
     }
-    
+
     fun reload() {
         config = Config.load(configDirectory)
         loadAllWhitelists()
     }
-    
+
     @Subscribe
     fun onProxyShutdown(ev: ProxyShutdownEvent) {
         logger.info("Bye!")
@@ -71,7 +72,7 @@ class ReWhitelist @Inject constructor(
             logger.info("Generating default whitelist")
             whitelists.add(Whitelist.createNew("default"))
         }
-        
+
         directory.listFiles { f -> f.isFile && f.extension == "toml" && f.nameWithoutExtension != "default" }?.forEach(this::addWhitelistFromFile)
     }
 
