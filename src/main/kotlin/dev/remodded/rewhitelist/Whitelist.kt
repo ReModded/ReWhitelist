@@ -13,11 +13,13 @@ class Whitelist private constructor(val name: String) {
         private set
 
     val entries = mutableListOf<Entry>()
+    val servers: MutableSet<String> = hashSetOf()
 
     private val file = getWhitelistFile(name)
 
     constructor(name: String, toml: Toml) : this(name) {
         enabled = toml.getBoolean("enabled", false)
+        servers.addAll(toml.getList<String>("servers", emptyList()))
     }
 
     fun enable() {
@@ -43,7 +45,11 @@ class Whitelist private constructor(val name: String) {
             entriesList.add(entryMap)
         }
 
-        TomlWriter().write(mapOf("enabled" to enabled, "whitelist" to entriesList), file)
+        TomlWriter().write(mapOf(
+            "enabled" to enabled,
+            "servers" to servers,
+            "whitelist" to entriesList
+        ), file)
     }
 
     companion object {

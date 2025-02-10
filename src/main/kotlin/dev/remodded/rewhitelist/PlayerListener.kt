@@ -11,7 +11,7 @@ import kotlin.jvm.optionals.getOrNull
 object PlayerListener {
     @Subscribe
     fun onPlayerJoin(ev: LoginEvent) {
-        if (isPlayerAllowed(ev.player))
+        if (isPlayerAllowed(ev.player, null))
             return
 
         ev.result = ReWhitelist.config.denied
@@ -23,37 +23,33 @@ object PlayerListener {
         if (server == null) // Some other plugin already prevented the connection
             return
 
-        if (isPlayerAllowed(ev.player))
+        if (isPlayerAllowed(ev.player, server))
             return
 
         ev.result = ServerPreConnectEvent.ServerResult.denied()
     }
 
-    private fun isPlayerAllowed(player: Player): Boolean {
-        if (!ReWhitelist.whitelists[0].enabled) 
+    private fun isPlayerAllowed(player: Player, server: RegisteredServer?): Boolean {
+        if (!ReWhitelist.whitelists[0].enabled)
             return true
-        
-        for (whitelist in ReWhitelist.whitelists)
-            if (whitelist.enabled && whitelist.isPlayerAllowed(player)) {
-                ReWhitelist.logger.info("[Player Allowed] ${player.username} allowed by whitelist ${whitelist.name}")
+
+        for (whitelist in ReWhitelist.whitelists) {
+            // If the whitelist is disabled, skip it
+            if (!whitelist.enabled)
+                continue
+
+            // If the whitelist has server restrictions, skip it if the server is not in the list
+            if (server != null && whitelist.servers.isNotEmpty() && !whitelist.servers.contains(server.serverInfo.name))
+                continue
+
+            // If the whitelist is enabled and the player is allowed, return true
+            if (whitelist.isPlayerAllowed(player)) {
+                if (server != null)
+                    ReWhitelist.logger.info("[Player Allowed] ${player.username} allowed by whitelist ${whitelist.name}")
                 return true
             }
-        
+        }
+
         return false
     }
-
-//    private fun isPlayerAllowed(player: Player): Boolean {
-//        var anyWasEnabled = false
-//        for (whitelist in ReWhitelist.whitelists) {
-//            if(whitelist.enabled) {
-//                anyWasEnabled = true
-//                if(whitelist.isPlayerAllowed(player)) {
-//                    ReWhitelist.logger.info("[Player Allowed] ${player.username} allowed by whitelist ${whitelist.name}")
-//                    return true
-//                }
-//            }
-//        }
-//
-//        return !anyWasEnabled
-//    }
 }

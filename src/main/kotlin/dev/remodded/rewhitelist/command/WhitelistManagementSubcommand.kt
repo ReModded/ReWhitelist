@@ -7,6 +7,7 @@ import com.mojang.brigadier.context.CommandContext
 import com.velocitypowered.api.command.CommandSource
 import dev.remodded.rewhitelist.ReWhitelist
 import dev.remodded.rewhitelist.Whitelist
+import dev.remodded.rewhitelist.command.WhitelistSettingsSubcommand.whitelistSettingsSubcommand
 import dev.remodded.rewhitelist.entries.Entry
 import dev.remodded.rewhitelist.utils.CommandUtils
 import dev.remodded.rewhitelist.utils.CommandUtils.argument
@@ -19,6 +20,8 @@ import net.kyori.adventure.text.format.NamedTextColor
 
 object WhitelistManagementSubcommand {
     fun <T: ArgumentBuilder<CommandSource, T>> T.whitelistManagementSubcommand(whitelistNameResolver: (CommandContext<CommandSource>)->String): T {
+        val whitelistResolver = {ctx: CommandContext<CommandSource> -> getWhitelist(whitelistNameResolver(ctx)) }
+
         return then(
             literal("add")
                 .requires(CommandUtils.permissionRequirement("rewhitelist.command.whitelist.add"))
@@ -73,6 +76,7 @@ object WhitelistManagementSubcommand {
                     sendWhitelist(ctx.source, whitelistNameResolver(ctx), 1)
                 }
         )
+        .then(whitelistSettingsSubcommand(whitelistResolver))
     }
 
     private fun addWhitelistEntry(src: CommandSource, whitelistName: String, entry: Entry) {
@@ -164,11 +168,11 @@ object WhitelistManagementSubcommand {
         return 0
     }
 
-    private fun getWhitelist(src: CommandSource, whitelistName: String): Whitelist? {
-        val whitelist = ReWhitelist.Companion.getWhitelist(whitelistName)
+    private val UNKNOWN_WHITELIST = DynamicCommandExceptionType{ arg -> VelocityBrigadierMessage.tooltip(Component.text("Selected ($arg) whitelist doesn't exists", NamedTextColor.RED)) }
+    private fun getWhitelist(whitelistName: String): Whitelist {
+        val whitelist = ReWhitelist.getWhitelist(whitelistName)
 
-        if (whitelist == null)
-            src.sendMessage(Component.text("Selected ($whitelistName) whitelist doesn't exists", NamedTextColor.RED))
+        if (whitelist == null) throw UNKNOWN_WHITELIST.create(whitelistName)
 
         return whitelist
     }
