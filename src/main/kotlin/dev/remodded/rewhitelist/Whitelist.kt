@@ -4,6 +4,7 @@ import com.moandjiezana.toml.Toml
 import com.moandjiezana.toml.TomlWriter
 import com.velocitypowered.api.proxy.Player
 import dev.remodded.rewhitelist.entries.Entry
+import dev.remodded.rewhitelist.utils.ordinal
 import java.io.File
 
 class Whitelist private constructor(val name: String) {
@@ -64,7 +65,7 @@ class Whitelist private constructor(val name: String) {
                     val factory = ReWhitelist.entryRegistry.get(type) ?: return@forEachIndexed
                     whitelist.entries.add(factory.fromToml(entry))
                 } catch (ex: Exception) {
-                    ReWhitelist.logger.error("Unable to read whitelist $i entry \n(${entry.entrySet().joinToString("\n") { e -> "${e.key}:${e.value}" }})")
+                    ReWhitelist.logger.error("Unable to read whitelist ${i.ordinal()} entry \n(${entry.entrySet().joinToString("\n") { e -> "${e.key}:${e.value}" }})")
                     ex.printStackTrace()
                 }
             }
