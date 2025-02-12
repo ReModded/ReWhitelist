@@ -40,6 +40,11 @@ class ReWhitelist @Inject constructor(
         WhitelistCommand.register()
     }
 
+//    @Subscribe
+//    fun permission(ev: com.velocitypowered.api.event.permission.PermissionsSetupEvent) {
+//        ev.provider = com.velocitypowered.api.permission.PermissionProvider{ s -> com.velocitypowered.api.permission.PermissionFunction.ALWAYS_TRUE }
+//    }
+
     fun reload() {
         config = Config.load(configDirectory)
         loadAllWhitelists()
