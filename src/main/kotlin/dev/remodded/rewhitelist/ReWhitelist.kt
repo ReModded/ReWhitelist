@@ -61,6 +61,7 @@ class ReWhitelist @Inject constructor(
         entryRegistry.register(RegexEntry.Factory)
         entryRegistry.register(GroupEntry.Factory)
         entryRegistry.register(PermissionEntry.Factory)
+        entryRegistry.register(IPEntry.Factory)
     }
 
     private fun loadAllWhitelists() {
