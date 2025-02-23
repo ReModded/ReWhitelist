@@ -4,7 +4,7 @@ For example, you can have a list with all administrators who have access to the 
 You no longer need to add or remove users from one whitelist, you just need to enable or disable  whitelist with testers in it.
 
 ## Download
-You can download the latest version of the plugin from the [Hangar](https://hangar.papermc.io/ReModded/ReWhitelist).
+You can download the latest version of the plugin from the [Modrinth](https://modrinth.com/plugin/rewhitelist) or [Hangar](https://hangar.papermc.io/ReModded/ReWhitelist).
 
 ## Issues & suggestions
 If you have any issues or suggestions, please report them in the [issues](https://github.com/ReModded/ReWhitelist/issues) section.
