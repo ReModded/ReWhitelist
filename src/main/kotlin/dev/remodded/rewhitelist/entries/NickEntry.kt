@@ -68,7 +68,7 @@ class NickEntry private constructor(factory: Entry.Factory<*>, val nick: String,
                     if (ReWhitelist.server.configuration.isOnlineMode) {
                         uuid = OfflinePlayerUtils.getOfflinePlayerUUID(nick)
                         if (uuid == null)
-                            ctx.source.sendMessage(Component.text("Couldn't find uuid for nick $nick. It it's possible that the username is invalid.", NamedTextColor.YELLOW))
+                            ctx.source.sendMessage(Component.text("Couldn't find uuid for nick '$nick'. Make sure that that it's valid online-mode username.", NamedTextColor.YELLOW))
                     }
 
                     entryConsumer(ctx, NickEntry(this, nick, uuid))
