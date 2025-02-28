@@ -16,6 +16,9 @@ repositories {
     maven("https://s01.oss.sonatype.org/content/repositories/snapshots/") {
         name = "sonatype-oss-snapshots"
     }
+    maven("https://repo.opencollab.dev/main/") {
+        name = "GeyserMC"
+    }
 }
 
 dependencies {
@@ -24,6 +27,8 @@ dependencies {
     implementation(libs.kyori.pagginate)
 
     implementation("org.jetbrains.kotlin:kotlin-stdlib-jdk8")
+
+    compileOnly("org.geysermc.floodgate:api:2.2.3-SNAPSHOT")
 }
 
 tasks {

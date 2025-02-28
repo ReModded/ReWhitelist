@@ -16,8 +16,14 @@ class Config(config: Toml) {
 
     val useNicksUUIDs: Boolean = config.getBoolean("useNicksUUIDs", true) && ReWhitelist.server.configuration.isOnlineMode
 
+    val integrations = Integrations(config.getTable("integrations") ?: Toml())
+
     val uuidCacheDuration: Long = config.getLong("uuidCacheDuration", 600)
 
+
+    class Integrations(table: Toml) {
+        val floodgate: Boolean = table.getBoolean("floodgate", true) && ReWhitelist.server.pluginManager.isLoaded("floodgate")
+    }
 
     companion object {
         fun load(configDirectory: Path): Config {

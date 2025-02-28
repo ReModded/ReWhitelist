@@ -4,6 +4,10 @@ useNicksUUIDs = false
 # Duration of caching players UUIDs
 uuidCacheDuration = 600
 
+# Those options are applicable only when the respective plugins are present.
+[integrations]
+floodgate=true
+
 [messages]
 # Message sent when a player was denied access
 deny = "&cYou're not invited to the party..."

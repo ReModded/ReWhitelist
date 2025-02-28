@@ -3,6 +3,7 @@ package dev.remodded.rewhitelist.utils
 import com.google.common.cache.CacheBuilder
 import com.velocitypowered.api.util.UuidUtils
 import dev.remodded.rewhitelist.ReWhitelist
+import org.geysermc.floodgate.api.FloodgateApi
 import java.io.BufferedReader
 import java.io.InputStreamReader
 import java.net.URI
@@ -20,8 +21,6 @@ object OfflinePlayerUtils {
     }
 
     fun getOfflinePlayerUUID(username: String): UUID? {
-        val username = username.lowercase()
-
         if (uuidCache.containsKey(username)) {
             val cached = uuidCache[username]
             return if (cached == NULL_UUID)
@@ -38,6 +37,19 @@ object OfflinePlayerUtils {
         }
 
         val stringUUID = try {
+            // Handle GeyserMc/Floodgate players
+            if (ReWhitelist.config.integrations.floodgate) {
+                val prefix = FloodgateApi.getInstance().playerPrefix
+                if (username.startsWith(prefix)) {
+                    val uuid: UUID? = FloodgateApi.getInstance().getUuidFor(username.substring(prefix.length)).get()
+
+                    if (uuid != null)
+                        uuidCache.put(username, uuid)
+
+                    return uuid
+                }
+            }
+
             val url = URI("https://api.mojang.com/users/profiles/minecraft/$username").toURL()
             val urlConnection = url.openConnection()
             BufferedReader(InputStreamReader(urlConnection.getInputStream())).use { reader ->
