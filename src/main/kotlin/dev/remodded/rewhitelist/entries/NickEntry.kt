@@ -10,6 +10,8 @@ import com.velocitypowered.api.proxy.Player
 import dev.remodded.rewhitelist.ReWhitelist
 import dev.remodded.rewhitelist.Whitelist
 import dev.remodded.rewhitelist.utils.OfflinePlayerUtils
+import net.kyori.adventure.text.Component
+import net.kyori.adventure.text.format.NamedTextColor
 import java.util.*
 
 class NickEntry private constructor(factory: Entry.Factory<*>, val nick: String, var uuid: UUID?) : Entry(factory) {
@@ -63,8 +65,11 @@ class NickEntry private constructor(factory: Entry.Factory<*>, val nick: String,
                     val nick = StringArgumentType.getString(ctx, "nick")
                     var uuid: UUID? = null
 
-                    if (ReWhitelist.server.configuration.isOnlineMode)
+                    if (ReWhitelist.server.configuration.isOnlineMode) {
                         uuid = OfflinePlayerUtils.getOfflinePlayerUUID(nick)
+                        if (uuid == null)
+                            ctx.source.sendMessage(Component.text("Couldn't find uuid for nick $nick. It it's possible that the username is invalid.", NamedTextColor.YELLOW))
+                    }
 
                     entryConsumer(ctx, NickEntry(this, nick, uuid))
                     0
