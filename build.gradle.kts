@@ -8,7 +8,7 @@ plugins {
 }
 
 group = "dev.remodded"
-version = "1.0.3"
+version = "1.0.4"
 
 repositories {
     maven("https://repo.remodded.dev/repository/PaperMC/")
