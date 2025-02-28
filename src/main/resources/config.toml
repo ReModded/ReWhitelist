@@ -1,6 +1,9 @@
 # Matches nick entris using UUIDs if server is in online-mode
 useNicksUUIDs = false
 
+# Duration of caching players UUIDs
+uuidCacheDuration = 600
+
 [messages]
 # Message sent when a player was denied access
 deny = "&cYou're not invited to the party..."

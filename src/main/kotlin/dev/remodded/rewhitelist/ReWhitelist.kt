@@ -9,6 +9,7 @@ import com.velocitypowered.api.plugin.annotation.DataDirectory
 import com.velocitypowered.api.proxy.ProxyServer
 import dev.remodded.rewhitelist.command.WhitelistCommand
 import dev.remodded.rewhitelist.entries.*
+import dev.remodded.rewhitelist.utils.OfflinePlayerUtils
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import java.io.File
@@ -31,6 +32,7 @@ class ReWhitelist @Inject constructor(
     @Subscribe
     fun onProxyInitialization(ev: ProxyInitializeEvent) {
         config = Config.load(configDirectory)
+        OfflinePlayerUtils.reload()
 
         registerBuiltinEntries()
 
@@ -47,6 +49,8 @@ class ReWhitelist @Inject constructor(
 
     fun reload() {
         config = Config.load(configDirectory)
+        OfflinePlayerUtils.reload()
+
         loadAllWhitelists()
     }
 
