@@ -13,8 +13,11 @@ import dev.remodded.rewhitelist.utils.OfflinePlayerUtils
 import java.util.*
 
 class NickEntry private constructor(factory: Entry.Factory<*>, val nick: String, var uuid: UUID?) : Entry(factory) {
+
+    var validUUID = true
+
     override fun match(player: Player): Boolean {
-        if (ReWhitelist.config.useNicksUUIDs) {
+        if (ReWhitelist.config.useNicksUUIDs && validUUID) {
             if (uuid == null) {
                 uuid = OfflinePlayerUtils.getOfflinePlayerUUID(nick)
                 ReWhitelist.whitelists.forEach(Whitelist::save)
@@ -22,6 +25,8 @@ class NickEntry private constructor(factory: Entry.Factory<*>, val nick: String,
 
             if (uuid != null)
                 return player.uniqueId == uuid
+            else
+                validUUID = false
         }
 
         return player.username == nick
