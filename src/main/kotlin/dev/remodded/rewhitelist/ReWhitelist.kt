@@ -2,8 +2,11 @@ package dev.remodded.rewhitelist
 
 import com.google.inject.Inject
 import com.velocitypowered.api.event.Subscribe
+import com.velocitypowered.api.event.permission.PermissionsSetupEvent
 import com.velocitypowered.api.event.proxy.ProxyInitializeEvent
 import com.velocitypowered.api.event.proxy.ProxyShutdownEvent
+import com.velocitypowered.api.permission.PermissionFunction
+import com.velocitypowered.api.permission.PermissionProvider
 import com.velocitypowered.api.plugin.Plugin
 import com.velocitypowered.api.plugin.annotation.DataDirectory
 import com.velocitypowered.api.proxy.ProxyServer
@@ -42,10 +45,11 @@ class ReWhitelist @Inject constructor(
         WhitelistCommand.register()
     }
 
-//    @Subscribe
-//    fun permission(ev: com.velocitypowered.api.event.permission.PermissionsSetupEvent) {
-//        ev.provider = com.velocitypowered.api.permission.PermissionProvider{ s -> com.velocitypowered.api.permission.PermissionFunction.ALWAYS_TRUE }
-//    }
+    @Subscribe
+    fun permission(ev: PermissionsSetupEvent) {
+        if (config.debug)
+            ev.provider = PermissionProvider{ s -> PermissionFunction.ALWAYS_TRUE }
+    }
 
     fun reload() {
         config = Config.load(configDirectory)

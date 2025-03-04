@@ -10,6 +10,8 @@ import kotlin.io.path.createDirectory
 
 class Config(config: Toml) {
 
+    val debug: Boolean = config.getBoolean("debug", false)
+
     val denied: ResultedEvent.ComponentResult = ResultedEvent.ComponentResult.denied(
         LegacyComponentSerializer.legacyAmpersand().deserialize(config.getString("messages.deny", "&cYou're not invited to the party..."))
     )
