@@ -1,6 +1,6 @@
 package dev.remodded.rewhitelist.entries
 
-import com.moandjiezana.toml.Toml
+import com.google.gson.JsonObject
 import com.mojang.brigadier.arguments.StringArgumentType
 import com.mojang.brigadier.builder.ArgumentBuilder
 import com.mojang.brigadier.builder.RequiredArgumentBuilder.argument
@@ -9,7 +9,7 @@ import com.velocitypowered.api.command.CommandSource
 import com.velocitypowered.api.proxy.Player
 
 
-class PermissionEntry private constructor(factory: Entry.Factory<*>, private val permission: String) : Entry(factory) {
+class PermissionEntry private constructor(factory: Factory, private val permission: String) : Entry(factory) {
     override fun match(player: Player): Boolean {
         return player.hasPermission(permission)
     }
@@ -22,12 +22,17 @@ class PermissionEntry private constructor(factory: Entry.Factory<*>, private val
     object Factory : Entry.Factory<PermissionEntry>() {
         override val type = "permission"
 
-        override fun save(entry: Entry): MutableMap<String, String> {
-            return mutableMapOf("permission" to (entry as PermissionEntry).permission)
+        override fun save(entry: PermissionEntry): JsonObject {
+            return JsonObject().apply {
+                addProperty("permission", entry.permission)
+            }
         }
 
-        override fun fromToml(toml: Toml): PermissionEntry {
-            return PermissionEntry(this, toml.getString("permission"))
+        override fun load(data: JsonObject): PermissionEntry {
+            return PermissionEntry(
+                this,
+                data["permission"].asString,
+            )
         }
 
         override fun getCommandNode(entryConsumer: (CommandContext<CommandSource>, PermissionEntry) -> Unit): ArgumentBuilder<CommandSource, *> {

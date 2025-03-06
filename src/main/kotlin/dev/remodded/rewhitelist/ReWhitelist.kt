@@ -12,13 +12,12 @@ import com.velocitypowered.api.plugin.annotation.DataDirectory
 import com.velocitypowered.api.proxy.ProxyServer
 import dev.remodded.rewhitelist.command.WhitelistCommand
 import dev.remodded.rewhitelist.entries.*
+import dev.remodded.rewhitelist.loader.TomlFileStorage
+import dev.remodded.rewhitelist.loader.WhitelistStorage
 import dev.remodded.rewhitelist.utils.OfflinePlayerUtils
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
-import java.io.File
-import java.nio.file.FileAlreadyExistsException
 import java.nio.file.Path
-import kotlin.io.path.createDirectory
 
 
 @Plugin(id = "rewhitelist")
@@ -32,9 +31,12 @@ class ReWhitelist @Inject constructor(
         plugin = this
     }
 
+    lateinit var storage: WhitelistStorage
+
     @Subscribe
     fun onProxyInitialization(ev: ProxyInitializeEvent) {
         config = Config.load(configDirectory)
+        initStorage()
         OfflinePlayerUtils.reload()
 
         registerBuiltinEntries()
@@ -53,6 +55,7 @@ class ReWhitelist @Inject constructor(
 
     fun reload() {
         config = Config.load(configDirectory)
+        initStorage()
         OfflinePlayerUtils.reload()
 
         loadAllWhitelists()
@@ -72,27 +75,30 @@ class ReWhitelist @Inject constructor(
         entryRegistry.register(IPEntry.Factory)
     }
 
-    private fun loadAllWhitelists() {
-        val directory = File("whitelists")
-        try { directory.toPath().createDirectory() } catch (_: FileAlreadyExistsException) {}
+    private fun initStorage() {
+        storage = when (config.storage.type) {
+            WhitelistStorage.Type.TOML_FILE -> TomlFileStorage(config.storage)
+            else -> throw IllegalStateException("Unknown storage type")
+        }
+    }
 
+    private fun loadAllWhitelists() {
         whitelists.clear()
         logger.info("Loading whitelists")
 
-        val defaultFile = File(directory, "default.toml")
-        if(defaultFile.exists())
-            addWhitelistFromFile(defaultFile)
+        val (default, otherWhitelists) = storage.load().partition { it.name == "default" }
+
+        // Make sure there is always a default whitelist at index 0
+        if (default.isNotEmpty())
+            whitelists.add(default.first())
         else {
             logger.info("Generating default whitelist")
-            whitelists.add(Whitelist.createNew("default"))
+            val defaultWhitelist = Whitelist("default")
+            defaultWhitelist.save()
+            whitelists.add(defaultWhitelist)
         }
 
-        directory.listFiles { f -> f.isFile && f.extension == "toml" && f.nameWithoutExtension != "default" }?.forEach(this::addWhitelistFromFile)
-    }
-
-    private fun addWhitelistFromFile(file: File) {
-        val whitelist = file.nameWithoutExtension
-        whitelists.add(Whitelist.load(whitelist))
+        whitelists.addAll(otherWhitelists)
     }
 
     companion object {
@@ -101,6 +107,7 @@ class ReWhitelist @Inject constructor(
         lateinit var server: ProxyServer
         lateinit var config: Config
 
+        val defaultWhitelist get() = whitelists[0]
         val whitelists = mutableListOf<Whitelist>()
         val entryRegistry = EntryRegistry()
 

@@ -72,13 +72,13 @@ object WhitelistCommand {
     }
 
     private fun createNewWhitelist(src: CommandSource, whitelistName: String): Int {
-        var whitelist = ReWhitelist.getWhitelist(whitelistName)
-        if(whitelist != null) {
-            src.sendMessage(Component.text("Whitelist (${whitelist.name}) already exists", NamedTextColor.RED))
+        ReWhitelist.getWhitelist(whitelistName)?.run {
+            src.sendMessage(Component.text("Whitelist ($name) already exists", NamedTextColor.RED))
             return 1
         }
 
-        whitelist = Whitelist.createNew(whitelistName)
+        val whitelist = Whitelist(whitelistName)
+        whitelist.save()
         ReWhitelist.whitelists.add(whitelist)
 
         src.sendMessage(Component.text("Whitelist (${whitelist.name}) has been created", NamedTextColor.GREEN))

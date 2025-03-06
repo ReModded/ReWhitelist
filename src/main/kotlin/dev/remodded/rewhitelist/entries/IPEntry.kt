@@ -1,6 +1,6 @@
 package dev.remodded.rewhitelist.entries
 
-import com.moandjiezana.toml.Toml
+import com.google.gson.JsonObject
 import com.mojang.brigadier.arguments.StringArgumentType
 import com.mojang.brigadier.builder.ArgumentBuilder
 import com.mojang.brigadier.context.CommandContext
@@ -19,7 +19,7 @@ import kotlin.experimental.inv
 import kotlin.experimental.or
 import kotlin.math.min
 
-class IPEntry private constructor(factory: Entry.Factory<*>, val minAddress: InetAddress, val maxAddress: InetAddress) : Entry(factory) {
+class IPEntry private constructor(factory: Factory, val minAddress: InetAddress, val maxAddress: InetAddress) : Entry(factory) {
 
     override fun match(player: Player): Boolean {
         val address = player.remoteAddress.address.address
@@ -33,19 +33,19 @@ class IPEntry private constructor(factory: Entry.Factory<*>, val minAddress: Ine
     object Factory : Entry.Factory<IPEntry>() {
         override val type = "ip"
 
-        override fun save(entry: Entry): MutableMap<String, String> {
-            entry as IPEntry
-
-            val map = mutableMapOf(
-                "minAddress" to entry.minAddress.hostAddress,
-                "maxAddress" to entry.maxAddress.hostAddress,
-            )
-
-            return map
+        override fun save(entry: IPEntry): JsonObject {
+            return JsonObject().apply {
+                addProperty("minAddress", entry.minAddress.hostAddress)
+                addProperty("maxAddress", entry.maxAddress.hostAddress)
+            }
         }
 
-        override fun fromToml(toml: Toml): IPEntry {
-            return IPEntry(this, InetAddress.getByName(toml.getString("minAddress")), InetAddress.getByName(toml.getString("maxAddress")))
+        override fun load(data: JsonObject): IPEntry {
+            return IPEntry(
+                this,
+                InetAddress.getByName(data["minAddress"].asString),
+                InetAddress.getByName(data["maxAddress"].asString),
+            )
         }
 
         override fun getCommandNode(entryConsumer: (CommandContext<CommandSource>, IPEntry) -> Unit): ArgumentBuilder<CommandSource, *> =

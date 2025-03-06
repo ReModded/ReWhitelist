@@ -1,6 +1,6 @@
 package dev.remodded.rewhitelist.entries
 
-import com.moandjiezana.toml.Toml
+import com.google.gson.JsonObject
 import com.mojang.brigadier.arguments.StringArgumentType
 import com.mojang.brigadier.builder.ArgumentBuilder
 import com.mojang.brigadier.builder.RequiredArgumentBuilder.argument
@@ -14,7 +14,7 @@ import net.kyori.adventure.text.Component
 import net.kyori.adventure.text.format.NamedTextColor
 import java.util.*
 
-class NickEntry private constructor(factory: Entry.Factory<*>, val nick: String, var uuid: UUID?) : Entry(factory) {
+class NickEntry private constructor(factory: Factory, val nick: String, var uuid: UUID?) : Entry(factory) {
 
     var validUUID = true
 
@@ -42,21 +42,19 @@ class NickEntry private constructor(factory: Entry.Factory<*>, val nick: String,
     object Factory : Entry.Factory<NickEntry>() {
         override val type = "nick"
 
-        override fun save(entry: Entry): MutableMap<String, String> {
-            entry as NickEntry
-
-            val map = mutableMapOf(
-                "nick" to entry.nick,
-            )
-
-            if (ReWhitelist.server.configuration.isOnlineMode && entry.uuid != null)
-                map["uuid"] = entry.uuid.toString()
-
-            return map
+        override fun save(entry: NickEntry): JsonObject {
+            return JsonObject().apply {
+                addProperty("nick", entry.nick)
+                addProperty("uuid", entry.uuid?.toString())
+            }
         }
 
-        override fun fromToml(toml: Toml): NickEntry {
-            return NickEntry(this, toml.getString("nick"), toml.getString("uuid", null)?.let { UUID.fromString(it) })
+        override fun load(data: JsonObject): NickEntry {
+            return NickEntry(
+                this,
+                data["nick"].asString,
+                data["uuid"]?.let { UUID.fromString(it.asString) },
+            )
         }
 
         override fun getCommandNode(entryConsumer: (CommandContext<CommandSource>, NickEntry) -> Unit): ArgumentBuilder<CommandSource, *> {

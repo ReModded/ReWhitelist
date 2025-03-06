@@ -30,7 +30,7 @@ object PlayerListener {
     }
 
     private fun isPlayerAllowed(player: Player, server: RegisteredServer?): Boolean {
-        if (!ReWhitelist.whitelists[0].enabled)
+        if (!ReWhitelist.defaultWhitelist.enabled)
             return true
 
         for (whitelist in ReWhitelist.whitelists) {

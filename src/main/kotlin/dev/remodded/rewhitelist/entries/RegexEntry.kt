@@ -1,6 +1,6 @@
 package dev.remodded.rewhitelist.entries
 
-import com.moandjiezana.toml.Toml
+import com.google.gson.JsonObject
 import com.mojang.brigadier.arguments.StringArgumentType
 import com.mojang.brigadier.builder.ArgumentBuilder
 import com.mojang.brigadier.builder.RequiredArgumentBuilder.argument
@@ -9,7 +9,7 @@ import com.velocitypowered.api.command.CommandSource
 import com.velocitypowered.api.proxy.Player
 
 
-class RegexEntry(factory: Entry.Factory<*>, val regex: Regex) : Entry(factory) {
+class RegexEntry(factory: Factory, val regex: Regex) : Entry(factory) {
     override fun match(player: Player): Boolean {
         return regex.matches(player.username)
     }
@@ -22,12 +22,17 @@ class RegexEntry(factory: Entry.Factory<*>, val regex: Regex) : Entry(factory) {
     object Factory : Entry.Factory<RegexEntry>() {
         override val type = "regex"
 
-        override fun save(entry: Entry): MutableMap<String, String> {
-            return mutableMapOf("regex" to (entry as RegexEntry).regex.toString())
+        override fun save(entry: RegexEntry): JsonObject {
+            return JsonObject().apply {
+                addProperty("regex", entry.regex.toString())
+            }
         }
 
-        override fun fromToml(toml: Toml): RegexEntry {
-            return RegexEntry(this, Regex(toml.getString("regex")))
+        override fun load(data: JsonObject): RegexEntry {
+            return RegexEntry(
+                this,
+                Regex(data["regex"].asString),
+            )
         }
 
         override fun getCommandNode(entryConsumer: (CommandContext<CommandSource>, RegexEntry) -> Unit): ArgumentBuilder<CommandSource, *> {

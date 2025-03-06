@@ -4,6 +4,11 @@ useNicksUUIDs = false
 # Duration of caching players UUIDs
 uuidCacheDuration = 600
 
+# Avaliable types: (TOML_FILE)
+[storage]
+type = "TOML_FILE"
+directory = "whitelists"
+
 # Those options are applicable only when the respective plugins are present.
 [integrations]
 floodgate=true

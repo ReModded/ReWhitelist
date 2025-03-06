@@ -1,6 +1,6 @@
 package dev.remodded.rewhitelist.entries
 
-import com.moandjiezana.toml.Toml
+import com.google.gson.JsonObject
 import com.mojang.brigadier.arguments.StringArgumentType
 import com.mojang.brigadier.builder.ArgumentBuilder
 import com.mojang.brigadier.builder.RequiredArgumentBuilder.argument
@@ -10,7 +10,7 @@ import com.velocitypowered.api.proxy.Player
 import java.util.*
 
 
-class UUIDEntry private constructor(factory: Entry.Factory<*>, private val uuid: UUID): Entry(factory) {
+class UUIDEntry private constructor(factory: Factory, private val uuid: UUID): Entry(factory) {
     override fun match(player: Player): Boolean {
         return player.uniqueId == uuid
     }
@@ -23,12 +23,17 @@ class UUIDEntry private constructor(factory: Entry.Factory<*>, private val uuid:
     object Factory: Entry.Factory<UUIDEntry>() {
         override val type = "uuid"
 
-        override fun save(entry: Entry): MutableMap<String, String> {
-            return mutableMapOf("uuid" to (entry as UUIDEntry).uuid.toString())
+        override fun save(entry: UUIDEntry): JsonObject {
+            return JsonObject().apply {
+                addProperty("uuid", entry.uuid.toString())
+            }
         }
 
-        override fun fromToml(toml: Toml): UUIDEntry {
-            return UUIDEntry(this, UUID.fromString(toml.getString("uuid")))
+        override fun load(data: JsonObject): UUIDEntry {
+            return UUIDEntry(
+                this,
+                UUID.fromString(data["uuid"].asString),
+            )
         }
 
         override fun getCommandNode(entryConsumer: (CommandContext<CommandSource>, UUIDEntry) -> Unit): ArgumentBuilder<CommandSource, *> {
